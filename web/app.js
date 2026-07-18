@@ -138,6 +138,25 @@ document.getElementById("add-btn").addEventListener("click", addRow);
 document.getElementById("disconnect-btn").addEventListener("click", disconnect);
 
 (async function autoConnect() {
+  // A one-time setup link (?url=...&anonKey=...&secret=...) takes priority
+  // over anything already saved, so sharing a fresh link always works even
+  // if this browser previously connected to something else. The params are
+  // stripped from the address bar immediately after reading them so the
+  // secret doesn't linger in browser history.
+  const params = new URLSearchParams(window.location.search);
+  const linkUrl = params.get("url");
+  const linkAnonKey = params.get("anonKey");
+  const linkSecret = params.get("secret");
+
+  if (linkUrl && linkAnonKey && linkSecret) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+    document.getElementById("supabase-url").value = linkUrl;
+    document.getElementById("supabase-anon-key").value = linkAnonKey;
+    document.getElementById("shared-secret").value = linkSecret;
+    await connect(linkUrl, linkAnonKey, linkSecret);
+    return;
+  }
+
   const url = localStorage.getItem(STORAGE_KEYS.url);
   const anonKey = localStorage.getItem(STORAGE_KEYS.anonKey);
   const secret = localStorage.getItem(STORAGE_KEYS.secret);

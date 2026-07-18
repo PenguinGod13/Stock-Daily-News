@@ -27,6 +27,18 @@ def test_send_email_logs_in_and_sends(mock_smtp_ssl):
     assert "Body" in args[2]
 
 
+@patch("scanner.emailer.smtplib.SMTP_SSL")
+def test_send_email_supports_multiple_comma_separated_recipients(mock_smtp_ssl):
+    mock_server = MagicMock()
+    mock_smtp_ssl.return_value.__enter__.return_value = mock_server
+
+    send_email("me@gmail.com", "app-password", "a@example.com, b@example.com", "Subject", "<p>Body</p>")
+
+    args, kwargs = mock_server.sendmail.call_args
+    assert args[1] == ["a@example.com", "b@example.com"]
+    assert "a@example.com, b@example.com" in args[2]
+
+
 @patch("scanner.emailer.send_email")
 def test_send_debug_email_includes_all_errors(mock_send_email):
     send_debug_email("me@gmail.com", "app-password", "me@gmail.com", ["error one", "error two"])

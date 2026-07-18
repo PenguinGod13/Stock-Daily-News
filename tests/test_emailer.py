@@ -39,3 +39,16 @@ def test_send_debug_email_includes_all_errors(mock_send_email):
     assert "Debug" in args[3]
     assert "error one" in args[4]
     assert "error two" in args[4]
+
+
+@patch("scanner.emailer.send_email")
+def test_send_debug_email_escapes_html_in_errors(mock_send_email):
+    send_debug_email("me@gmail.com", "app-password", "me@gmail.com", ["error with <script>alert('xss')</script>"])
+
+    mock_send_email.assert_called_once()
+    args, kwargs = mock_send_email.call_args
+    body = args[4]
+    # Check that the dangerous HTML is escaped, not rendered as tags
+    assert "<script>" not in body
+    assert "&lt;script&gt;" in body
+    assert "alert" in body  # The content is there, just escaped

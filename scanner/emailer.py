@@ -1,3 +1,4 @@
+import html
 import smtplib
 from email.mime.text import MIMEText
 
@@ -20,5 +21,5 @@ def send_email(gmail_address, gmail_app_password, recipient_email, subject, html
 
 
 def send_debug_email(gmail_address, gmail_app_password, recipient_email, errors):
-    body = "<h2>Debug report</h2><ul>" + "".join(f"<li>{e}</li>" for e in errors) + "</ul>"
+    body = "<h2>Debug report</h2><ul>" + "".join(f"<li>{html.escape(str(e))}</li>" for e in errors) + "</ul>"
     send_email(gmail_address, gmail_app_password, recipient_email, "⚠️ Debug report", body)

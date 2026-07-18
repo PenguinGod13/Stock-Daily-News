@@ -42,3 +42,14 @@ def test_get_market_trends_falls_back_to_finnhub_on_error(mock_post, mock_get_ge
 
     assert result == [{"title": "Market steady", "url": "https://example.com/m", "content": ""}]
     mock_get_general_news.assert_called_once_with("finnhub-key")
+
+
+@patch("scanner.trends.get_general_news")
+@patch("scanner.trends.requests.post")
+def test_get_market_trends_returns_empty_list_when_both_sources_fail(mock_post, mock_get_general_news):
+    mock_post.side_effect = Exception("network error")
+    mock_get_general_news.side_effect = Exception("finnhub down")
+
+    result = get_market_trends("ollama-key", "finnhub-key")
+
+    assert result == []

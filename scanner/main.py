@@ -1,5 +1,6 @@
 import sys
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from scanner.config import get_config
 from scanner.nz_time import is_run_window
@@ -38,7 +39,7 @@ def run(config=None, force=False):
 
     digest_md = build_digest(config["ollama_api_key"], ticker_records, market_trends)
     html = markdown_to_html(digest_md)
-    subject = f"Morning Digest — {date.today().strftime('%a %b %d')}"
+    subject = f"Morning Digest — {datetime.now(ZoneInfo('Pacific/Auckland')).date().strftime('%a %b %d')}"
 
     if config["dry_run"]:
         print(subject)

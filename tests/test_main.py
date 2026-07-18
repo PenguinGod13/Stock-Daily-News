@@ -111,3 +111,44 @@ def test_run_dry_run_does_not_send(
     mock_send_email.assert_not_called()
     captured = capsys.readouterr()
     assert "TL;DR" in captured.out
+
+
+@patch("scanner.main.is_run_window", return_value=True)
+@patch("scanner.main.get_watchlist", return_value=WATCHLIST)
+@patch("scanner.main.get_quote", side_effect=Exception("finnhub down"))
+@patch("scanner.main.get_market_trends", return_value=[])
+@patch("scanner.main.build_digest", return_value="# TL;DR\nAll good.")
+@patch("scanner.main.send_email")
+@patch("scanner.main.send_debug_email")
+def test_run_does_not_send_debug_email_when_debug_emails_false(
+    mock_send_debug, mock_send_email, mock_build_digest, mock_get_trends,
+    mock_get_quote, mock_get_watchlist, mock_is_run_window,
+):
+    config = dict(BASE_CONFIG)
+    config["debug_emails"] = False
+
+    run(config=config)
+
+    mock_send_email.assert_called_once()
+    mock_send_debug.assert_not_called()
+
+
+@patch("scanner.main.is_run_window", return_value=True)
+@patch("scanner.main.get_watchlist", return_value=WATCHLIST)
+@patch("scanner.main.get_quote", side_effect=Exception("finnhub down"))
+@patch("scanner.main.get_market_trends", return_value=[])
+@patch("scanner.main.build_digest", return_value="# TL;DR\nAll good.")
+@patch("scanner.main.send_email")
+@patch("scanner.main.send_debug_email")
+def test_run_dry_run_with_errors_does_not_send_debug_email(
+    mock_send_debug, mock_send_email, mock_build_digest, mock_get_trends,
+    mock_get_quote, mock_get_watchlist, mock_is_run_window,
+):
+    config = dict(BASE_CONFIG)
+    config["dry_run"] = True
+    config["debug_emails"] = True
+
+    run(config=config)
+
+    mock_send_email.assert_not_called()
+    mock_send_debug.assert_not_called()

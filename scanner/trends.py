@@ -20,5 +20,8 @@ def get_market_trends(ollama_api_key, finnhub_api_key):
             for r in data.get("results", [])
         ]
     except Exception:
-        articles = get_general_news(finnhub_api_key)
-        return [{"title": a["headline"], "url": a["url"], "content": ""} for a in articles]
+        try:
+            articles = get_general_news(finnhub_api_key)
+            return [{"title": a["headline"], "url": a["url"], "content": ""} for a in articles]
+        except Exception:
+            return []

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Stock Watchlist</title>
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"
+    integrity="sha384-BmlQlKlDvXvKoxkn5OQuUo/aJQCTXeB+Kls6EccBmG4Kf8AXvp89RtO9MtPxP/r5"
+    crossorigin="anonymous"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { text-align: left; padding: 0.4rem; border-bottom: 1px solid #ddd; }
+    input[type="text"], input[type="number"] { width: 100%; box-sizing: border-box; }
+    #setup, #app { display: none; }
+    #setup.visible, #app.visible { display: block; }
+    .error { color: #b00020; }
+  </style>
+</head>
+<body>
+  <div id="setup" class="visible">
+    <h1>Connect</h1>
+    <label>Supabase URL <input type="text" id="supabase-url" /></label><br />
+    <label>Supabase anon key <input type="text" id="supabase-anon-key" /></label><br />
+    <label>Shared secret <input type="text" id="shared-secret" /></label><br />
+    <button id="connect-btn">Connect</button>
+    <p class="error" id="setup-error"></p>
+  </div>
+
+  <div id="app">
+    <h1>Stock Watchlist</h1>
+    <table>
+      <thead>
+        <tr><th>Ticker</th><th>Owned</th><th>Shares</th><th>Cost basis</th><th>Notes</th><th></th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <h2>Add ticker</h2>
+    <label>Ticker <input type="text" id="new-ticker" /></label><br />
+    <label>Owned <input type="checkbox" id="new-owned" /></label><br />
+    <label>Shares <input type="number" id="new-shares" /></label><br />
+    <label>Cost basis <input type="number" id="new-cost-basis" /></label><br />
+    <label>Notes <input type="text" id="new-notes" /></label><br />
+    <button id="add-btn">Add</button>
+    <p class="error" id="app-error"></p>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

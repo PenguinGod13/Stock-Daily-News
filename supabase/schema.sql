@@ -1,8 +1,15 @@
 -- Apply this file via the Supabase dashboard SQL editor (Project ->
 -- SQL Editor -> New query -> paste -> Run), on a fresh Supabase project.
--- After applying, set the shared secret used by the RLS policy below:
---   alter database postgres set app.watchlist_shared_secret = '<your-secret>';
--- Then reload the config: select pg_reload_conf();
+--
+-- Before running, replace REPLACE_WITH_YOUR_SHARED_SECRET below (two
+-- occurrences) with a long random string of your choosing. This is baked
+-- directly into the policy rather than set via `alter database ... set`,
+-- because Supabase's hosted Postgres does not grant even the `postgres`
+-- role permission to set custom database-level parameters.
+--
+-- To rotate the secret later, re-run just the `create policy` statement
+-- below (after `drop policy "shared secret full access" on watchlist;`)
+-- with a new value.
 
 create table if not exists watchlist (
   id uuid primary key default gen_random_uuid(),
@@ -20,16 +27,16 @@ alter table watchlist enable row level security;
 -- bypasses RLS entirely, so no explicit service-role policy is required.
 
 -- The public web form uses the anon key. Access is gated by a shared
--- secret passed as a custom request header, checked here via a Postgres
--- setting configured per-request through PostgREST's `request.headers`.
+-- secret passed as a custom request header, checked against a literal
+-- value baked into this policy.
 create policy "shared secret full access"
   on watchlist
   for all
   using (
     current_setting('request.headers', true)::json ->> 'x-watchlist-secret'
-      = current_setting('app.watchlist_shared_secret', true)
+      = 'REPLACE_WITH_YOUR_SHARED_SECRET'
   )
   with check (
     current_setting('request.headers', true)::json ->> 'x-watchlist-secret'
-      = current_setting('app.watchlist_shared_secret', true)
+      = 'REPLACE_WITH_YOUR_SHARED_SECRET'
   );

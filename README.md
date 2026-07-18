@@ -9,9 +9,9 @@ design.
 
 1. **Supabase project**
    - Create a free project at supabase.com.
-   - Open the SQL Editor and run `supabase/schema.sql`.
-   - Set the RLS shared secret as described in the comment at the top of
-     that file.
+   - Open the SQL Editor, replace the two `REPLACE_WITH_YOUR_SHARED_SECRET`
+     placeholders in `supabase/schema.sql` with a long random string of your
+     choosing, then run the file.
    - Copy the project URL, anon key, and service role key.
 
 2. **Finnhub**

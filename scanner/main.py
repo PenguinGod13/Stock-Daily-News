@@ -20,6 +20,10 @@ def run(config=None, force=False):
         print("Outside NZ run window, exiting.")
         return
 
+    # A Supabase read failure here is deliberately left uncaught, same as a
+    # Gmail send failure below: there's no partial digest to salvage, so the
+    # run should crash and fail the GitHub Actions job visibly rather than
+    # exit "successfully" having sent nothing.
     watchlist = get_watchlist(config["supabase_url"], config["supabase_service_key"])
     if not watchlist:
         print("Empty watchlist, skipping.")

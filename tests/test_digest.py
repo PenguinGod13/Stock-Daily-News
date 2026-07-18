@@ -67,6 +67,7 @@ def test_build_fallback_digest_lists_movers_and_rest():
     assert "100.00" in result
     assert "MSFT" in result
     assert "AI chip demand surges" in result
+    assert "AAPL surges" in result
 
 
 def test_build_fallback_digest_handles_no_movers():

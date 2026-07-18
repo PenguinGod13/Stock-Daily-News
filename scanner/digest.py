@@ -56,6 +56,8 @@ def build_fallback_digest(ticker_records, market_trends):
                 else ""
             )
             lines.append(f"- {r['ticker']}: {r['pct_change']:.2f}%{pl_str}")
+            for headline in r.get("top_headlines", [])[:3]:
+                lines.append(f"  - {headline['headline']}")
     else:
         lines.append("- No tickers moved beyond the threshold today.")
     lines.append("")

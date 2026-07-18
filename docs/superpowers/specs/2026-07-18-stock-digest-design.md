@@ -100,8 +100,14 @@ Per-ticker record shape passed to the AI step:
 
 ```
 { ticker, current_price, pct_change, is_mover, owned, shares, cost_basis,
-  unrealized_pl, top_headlines: [...] }
+  unrealized_pl, notes, top_headlines: [...] }
 ```
+
+`notes` is your free-text field from the watchlist (e.g. "watching for
+earnings") — passed through as context for the AI, not just stored inertly.
+
+If a ticker is marked `owned` but `shares` or `cost_basis` is missing,
+`unrealized_pl` is omitted for that ticker rather than erroring.
 
 ### 4. Scheduling
 
@@ -128,7 +134,8 @@ weekdays later if preferred.
 
 ### 5. Secrets (GitHub Actions repo secrets)
 
-- `OLLAMA_API_KEY`
+- `OLLAMA_API_KEY` (used for both the digest synthesis call and the web
+  search tool call)
 - `FINNHUB_API_KEY`
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_KEY`

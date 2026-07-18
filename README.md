@@ -34,10 +34,17 @@ design.
      the workflow defaults.
 
 6. **Web form**
-   - Enable GitHub Pages for the repo, serving from the `web/` directory
-     (or copy `web/index.html` and `web/app.js` to any static host).
-   - Open the page, enter the Supabase URL, anon key, and the shared
-     secret from step 1 to connect.
+   - The repo must be public for GitHub Pages to work on a free GitHub
+     plan (Settings -> General -> Danger Zone -> Change visibility).
+   - In Settings -> Pages, set "Build and deployment: Source" to
+     **GitHub Actions**. `.github/workflows/deploy-pages.yml` handles
+     publishing `web/` on every push to `master` that touches that
+     directory (or trigger it manually from the Actions tab the first
+     time).
+   - Open the published page, enter the Supabase URL, anon key, and the
+     shared secret from step 1 to connect (or use a one-time setup link:
+     `<page-url>/?url=<supabase-url>&anonKey=<anon-key>&secret=<shared-secret>`,
+     which saves the values to that browser automatically).
 
 ## Local development
 

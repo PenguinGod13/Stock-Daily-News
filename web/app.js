@@ -21,6 +21,19 @@ function showSetup() {
   document.getElementById("setup").classList.add("visible");
 }
 
+function setError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = msg || "";
+}
+
+function setStatus(msg) {
+  const el = document.getElementById("app-status");
+  if (el) {
+    el.textContent = msg || "";
+    if (msg) setTimeout(() => { el.textContent = ""; }, 2500);
+  }
+}
+
 async function connect(url, anonKey, secret) {
   sharedSecret = secret;
   supabaseClient = supabase.createClient(url, anonKey, {
@@ -44,37 +57,67 @@ function disconnect() {
   showSetup();
 }
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 async function loadRows() {
   const { data, error } = await supabaseClient
     .from("watchlist")
     .select("*")
     .order("ticker");
 
-  const errorEl = document.getElementById("app-error");
+  const container = document.getElementById("watchlist-content");
+
   if (error) {
-    errorEl.textContent = error.message;
+    setError("app-error", error.message);
     return;
   }
-  errorEl.textContent = "";
+  setError("app-error", "");
 
-  const tbody = document.getElementById("rows");
-  tbody.innerHTML = "";
-  for (const row of data) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${row.ticker}</td>
-      <td>${row.owned ? "yes" : "no"}</td>
-      <td>${row.shares ?? ""}</td>
-      <td>${row.cost_basis ?? ""}</td>
-      <td>${row.notes ?? ""}</td>
-      <td><button data-id="${row.id}" class="delete-btn">Delete</button></td>
-    `;
-    tbody.appendChild(tr);
+  if (!data || data.length === 0) {
+    container.innerHTML = '<div class="empty-state">No tickers yet — add one below.</div>';
+    return;
   }
 
-  for (const btn of document.querySelectorAll(".delete-btn")) {
+  const rows = data.map(row => {
+    const badge = row.owned
+      ? '<span class="badge badge-owned">Owned</span>'
+      : '<span class="badge badge-watching">Watching</span>';
+
+    const position = row.owned && row.shares != null
+      ? `${escapeHtml(row.shares)} @ $${Number(row.cost_basis ?? 0).toFixed(2)}`
+      : row.owned ? "Owned" : "—";
+
+    return `
+      <tr>
+        <td style="font-weight:600;">${escapeHtml(row.ticker)}</td>
+        <td>${badge}</td>
+        <td style="color:#6b7280;">${escapeHtml(position)}</td>
+        <td style="color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(row.notes ?? "")}</td>
+        <td style="text-align:right;">
+          <button class="btn-delete" data-id="${escapeHtml(row.id)}" title="Remove">&#x2715;</button>
+        </td>
+      </tr>`;
+  }).join("");
+
+  container.innerHTML = `
+    <table class="watchlist-table">
+      <thead>
+        <tr>
+          <th>Ticker</th><th>Status</th><th>Position</th><th>Notes</th><th></th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  container.querySelectorAll(".btn-delete").forEach(btn => {
     btn.addEventListener("click", () => deleteRow(btn.dataset.id));
-  }
+  });
 }
 
 async function addRow() {
@@ -85,9 +128,14 @@ async function addRow() {
   const notes = document.getElementById("new-notes").value.trim() || null;
 
   if (!ticker) {
-    document.getElementById("app-error").textContent = "Ticker is required.";
+    setError("app-error", "Ticker symbol is required.");
+    document.getElementById("new-ticker").focus();
     return;
   }
+
+  const addBtn = document.getElementById("add-btn");
+  addBtn.disabled = true;
+  addBtn.textContent = "Adding…";
 
   const { error } = await supabaseClient.from("watchlist").insert({
     ticker,
@@ -97,28 +145,47 @@ async function addRow() {
     notes,
   });
 
-  const errorEl = document.getElementById("app-error");
+  addBtn.disabled = false;
+  addBtn.textContent = "Add to watchlist";
+
   if (error) {
-    errorEl.textContent = error.message;
+    setError("app-error", error.message);
     return;
   }
-  errorEl.textContent = "";
+
+  setError("app-error", "");
+  setStatus(`${ticker} added.`);
+
   document.getElementById("new-ticker").value = "";
   document.getElementById("new-owned").checked = false;
   document.getElementById("new-shares").value = "";
   document.getElementById("new-cost-basis").value = "";
   document.getElementById("new-notes").value = "";
+  document.getElementById("position-fields").classList.remove("visible");
+
   await loadRows();
+  document.getElementById("new-ticker").focus();
 }
 
 async function deleteRow(id) {
   const { error } = await supabaseClient.from("watchlist").delete().eq("id", id);
   if (error) {
-    document.getElementById("app-error").textContent = error.message;
+    setError("app-error", error.message);
     return;
   }
   await loadRows();
 }
+
+// Toggle position fields when "I own this stock" is switched
+document.getElementById("new-owned").addEventListener("change", function () {
+  const fields = document.getElementById("position-fields");
+  fields.classList.toggle("visible", this.checked);
+});
+
+// Submit on Enter in ticker field
+document.getElementById("new-ticker").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") addRow();
+});
 
 document.getElementById("connect-btn").addEventListener("click", async () => {
   const url = document.getElementById("supabase-url").value.trim();
@@ -126,26 +193,27 @@ document.getElementById("connect-btn").addEventListener("click", async () => {
   const secret = document.getElementById("shared-secret").value.trim();
 
   if (!url || !anonKey || !secret) {
-    document.getElementById("setup-error").textContent = "All fields are required.";
+    setError("setup-error", "All fields are required.");
     return;
   }
 
+  setError("setup-error", "");
+  document.getElementById("connect-btn").textContent = "Connecting…";
+  document.getElementById("connect-btn").disabled = true;
+
   await connect(url, anonKey, secret);
+
+  document.getElementById("connect-btn").textContent = "Connect";
+  document.getElementById("connect-btn").disabled = false;
 });
 
 document.getElementById("add-btn").addEventListener("click", addRow);
-
 document.getElementById("disconnect-btn").addEventListener("click", disconnect);
 
 (async function autoConnect() {
-  // A one-time setup link (#url=...&anonKey=...&secret=...) takes priority
-  // over anything already saved, so sharing a fresh link always works even
-  // if this browser previously connected to something else. This uses the
-  // URL fragment (#), not the query string (?): fragments are never sent
-  // to any server, are excluded from Referer headers, and never appear in
-  // server/CDN access logs — unlike query params, which are. The fragment
-  // is also stripped from the address bar immediately after reading it so
-  // it doesn't linger in browser history either.
+  // A one-time setup link (#url=...&anonKey=...&secret=...) takes priority.
+  // Uses URL fragment (#), not query string (?): fragments are never sent to
+  // any server, excluded from Referer headers, and never appear in server logs.
   const params = new URLSearchParams(window.location.hash.slice(1));
   const linkUrl = params.get("url");
   const linkAnonKey = params.get("anonKey");

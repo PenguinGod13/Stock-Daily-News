@@ -45,11 +45,18 @@ def test_render_digest_email_contains_table_and_narrative():
     assert 'name="viewport"' in result  # mobile meta tag
 
 
-
+def test_markdown_to_html_converts_heading():
     result = markdown_to_html("# Hello\n\nWorld")
 
     assert "<h1>Hello</h1>" in result
     assert "<p>World</p>" in result
+
+
+def test_markdown_to_html_strips_script_tags():
+    result = markdown_to_html("<script>alert('xss')</script>\n\nSafe text")
+
+    assert "<script>" not in result
+    assert "Safe text" in result
 
 
 @patch("scanner.emailer.smtplib.SMTP_SSL")

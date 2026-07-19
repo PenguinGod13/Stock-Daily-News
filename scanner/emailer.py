@@ -3,10 +3,23 @@ import smtplib
 from email.mime.text import MIMEText
 
 import markdown
+import nh3
+
+# Tags and attributes the AI narrative is permitted to produce.
+# Everything else (scripts, iframes, event handlers, style overrides, etc.)
+# is stripped by nh3 before the HTML is embedded in the email template.
+_ALLOWED_TAGS = {
+    "p", "br", "strong", "em", "b", "i",
+    "h1", "h2", "h3", "h4",
+    "ul", "ol", "li",
+    "a", "blockquote", "code", "pre",
+}
+_ALLOWED_ATTRS = {"a": {"href", "title"}}
 
 
 def markdown_to_html(md_text):
-    return markdown.markdown(md_text)
+    raw_html = markdown.markdown(md_text)
+    return nh3.clean(raw_html, tags=_ALLOWED_TAGS, attributes=_ALLOWED_ATTRS)
 
 
 def render_ticker_table(ticker_records):

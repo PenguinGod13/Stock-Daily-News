@@ -1,9 +1,51 @@
 from unittest.mock import MagicMock, patch
 
-from scanner.emailer import markdown_to_html, send_email, send_debug_email
+from scanner.emailer import markdown_to_html, render_ticker_table, render_digest_email, send_email, send_debug_email
+
+MOVER_RECORD = {
+    "ticker": "AAPL", "current_price": 210.50, "pct_change": 4.2,
+    "is_mover": True, "owned": True, "shares": 10, "cost_basis": 180.0,
+    "unrealized_pl": 305.0, "notes": None, "top_headlines": [],
+}
+FLAT_RECORD = {
+    "ticker": "MSFT", "current_price": 420.00, "pct_change": -0.5,
+    "is_mover": False, "owned": False, "shares": None, "cost_basis": None,
+    "unrealized_pl": None, "notes": None, "top_headlines": [],
+}
 
 
-def test_markdown_to_html_converts_heading():
+def test_render_ticker_table_shows_green_for_gain():
+    result = render_ticker_table([MOVER_RECORD])
+    assert "AAPL" in result
+    assert "+4.20%" in result
+    assert "#0a7d34" in result  # green colour for positive change
+    assert "MOVER" in result
+    assert "+$305.00" in result
+
+
+def test_render_ticker_table_shows_red_for_loss():
+    result = render_ticker_table([FLAT_RECORD])
+    assert "MSFT" in result
+    assert "-0.50%" in result
+    assert "#c0362c" in result  # red colour for negative change
+    assert "MOVER" not in result
+    assert "&mdash;" in result  # no P&L for non-owned
+
+
+def test_render_ticker_table_empty_returns_empty_string():
+    assert render_ticker_table([]) == ""
+
+
+def test_render_digest_email_contains_table_and_narrative():
+    result = render_digest_email("# TL;DR\nMarkets were up.", [MOVER_RECORD], "Mon Jul 21")
+    assert "AAPL" in result
+    assert "TL;DR" in result
+    assert "Mon Jul 21" in result
+    assert "<!DOCTYPE html>" in result
+    assert 'name="viewport"' in result  # mobile meta tag
+
+
+
     result = markdown_to_html("# Hello\n\nWorld")
 
     assert "<h1>Hello</h1>" in result

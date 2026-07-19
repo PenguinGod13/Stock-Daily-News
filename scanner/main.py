@@ -9,7 +9,7 @@ from scanner.market_data import get_quote, get_company_news
 from scanner.records import build_ticker_record
 from scanner.trends import get_market_trends
 from scanner.digest import build_digest
-from scanner.emailer import markdown_to_html, send_email, send_debug_email
+from scanner.emailer import render_digest_email, send_email, send_debug_email
 
 
 def _print_safely(text):
@@ -54,19 +54,20 @@ def run(config=None, force=False):
     market_trends = get_market_trends(config["ollama_api_key"], config["finnhub_api_key"])
 
     digest_md = build_digest(config["ollama_api_key"], ticker_records, market_trends)
-    html = markdown_to_html(digest_md)
-    subject = f"Morning Digest — {datetime.now(ZoneInfo('Pacific/Auckland')).date().strftime('%a %b %d')}"
+    subject_date = datetime.now(ZoneInfo('Pacific/Auckland')).date().strftime('%a %b %d')
+    subject = f"Morning Digest — {subject_date}"
+    html_body = render_digest_email(digest_md, ticker_records, subject_date)
 
     if config["dry_run"]:
         _print_safely(subject)
-        _print_safely(html)
+        _print_safely(html_body)
     else:
         send_email(
             config["gmail_address"],
             config["gmail_app_password"],
             config["recipient_email"],
             subject,
-            html,
+            html_body,
         )
 
     if errors and config["debug_emails"] and not config["dry_run"]:

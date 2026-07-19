@@ -156,11 +156,14 @@ async function addRow() {
   setError("app-error", "");
   setStatus(`${ticker} added.`);
 
+  // Reset form to clean "Watching" state
   document.getElementById("new-ticker").value = "";
-  document.getElementById("new-owned").checked = false;
+  document.getElementById("new-notes").value = "";
   document.getElementById("new-shares").value = "";
   document.getElementById("new-cost-basis").value = "";
-  document.getElementById("new-notes").value = "";
+  document.getElementById("btn-watching").classList.add("active");
+  document.getElementById("btn-owned").classList.remove("active");
+  document.getElementById("new-owned").checked = false;
   document.getElementById("position-fields").classList.remove("visible");
 
   await loadRows();
@@ -176,10 +179,20 @@ async function deleteRow(id) {
   await loadRows();
 }
 
-// Toggle position fields when "I own this stock" is switched
-document.getElementById("new-owned").addEventListener("change", function () {
-  const fields = document.getElementById("position-fields");
-  fields.classList.toggle("visible", this.checked);
+// Segmented "Watching / I own it" control
+document.getElementById("btn-watching").addEventListener("click", function () {
+  document.getElementById("btn-watching").classList.add("active");
+  document.getElementById("btn-owned").classList.remove("active");
+  document.getElementById("new-owned").checked = false;
+  document.getElementById("position-fields").classList.remove("visible");
+});
+
+document.getElementById("btn-owned").addEventListener("click", function () {
+  document.getElementById("btn-owned").classList.add("active");
+  document.getElementById("btn-watching").classList.remove("active");
+  document.getElementById("new-owned").checked = true;
+  document.getElementById("position-fields").classList.add("visible");
+  document.getElementById("new-shares").focus();
 });
 
 // Submit on Enter in ticker field

@@ -1,3 +1,4 @@
+# Sends the AI-written stock digest email on a daily schedule.
 name: Morning Digest
 
 on:

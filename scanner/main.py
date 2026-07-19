@@ -12,6 +12,18 @@ from scanner.digest import build_digest
 from scanner.emailer import markdown_to_html, send_email, send_debug_email
 
 
+def _print_safely(text):
+    # Windows terminals often default to a legacy encoding (e.g. cp1252)
+    # that can't represent every Unicode character an AI-generated digest
+    # might contain (smart quotes, em-dashes, etc). Fall back to replacing
+    # unsupported characters rather than crashing the dry run.
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        encoding = sys.stdout.encoding or "utf-8"
+        print(text.encode(encoding, errors="replace").decode(encoding))
+
+
 def run(config=None, force=False):
     config = config or get_config()
     errors = []
@@ -46,8 +58,8 @@ def run(config=None, force=False):
     subject = f"Morning Digest — {datetime.now(ZoneInfo('Pacific/Auckland')).date().strftime('%a %b %d')}"
 
     if config["dry_run"]:
-        print(subject)
-        print(html)
+        _print_safely(subject)
+        _print_safely(html)
     else:
         send_email(
             config["gmail_address"],

@@ -115,6 +115,32 @@ def test_run_dry_run_does_not_send(
 
 @patch("scanner.main.is_run_window", return_value=True)
 @patch("scanner.main.get_watchlist", return_value=WATCHLIST)
+@patch("scanner.main.get_quote", return_value={"current_price": 110.0, "previous_close": 100.0, "pct_change": 10.0})
+@patch("scanner.main.get_company_news", return_value=[])
+@patch("scanner.main.get_market_trends", return_value=[])
+@patch("scanner.main.build_digest", return_value="# TL;DR\nNon‑breaking hyphen and smart ‘quotes’.")
+@patch("scanner.main.send_email")
+def test_run_dry_run_prints_unicode_digest_without_crashing_on_narrow_encodings(
+    mock_send_email, mock_build_digest, mock_get_trends,
+    mock_get_news, mock_get_quote, mock_get_watchlist, mock_is_run_window,
+    capsys, monkeypatch,
+):
+    import io
+    monkeypatch.setattr(
+        "sys.stdout",
+        io.TextIOWrapper(io.BytesIO(), encoding="cp1252", errors="strict"),
+    )
+
+    config = dict(BASE_CONFIG)
+    config["dry_run"] = True
+
+    run(config=config)  # must not raise UnicodeEncodeError
+
+    mock_send_email.assert_not_called()
+
+
+@patch("scanner.main.is_run_window", return_value=True)
+@patch("scanner.main.get_watchlist", return_value=WATCHLIST)
 @patch("scanner.main.get_quote", side_effect=Exception("finnhub down"))
 @patch("scanner.main.get_market_trends", return_value=[])
 @patch("scanner.main.build_digest", return_value="# TL;DR\nAll good.")

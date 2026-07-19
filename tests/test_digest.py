@@ -29,6 +29,7 @@ TICKER_RECORDS = [
     },
 ]
 MARKET_TRENDS = [{"title": "AI chip demand surges", "url": "https://example.com/a", "content": "..."}]
+MARKET_MOVERS = [{"title": "NVDA +8% on earnings beat", "url": "https://example.com/n", "content": "..."}]
 
 
 @patch("scanner.digest.requests.post")
@@ -60,7 +61,7 @@ def test_build_digest_retries_once_then_falls_back(mock_post):
 
 
 def test_build_fallback_digest_lists_movers_and_rest():
-    result = build_fallback_digest(TICKER_RECORDS, MARKET_TRENDS)
+    result = build_fallback_digest(TICKER_RECORDS, MARKET_TRENDS, MARKET_MOVERS)
 
     assert "AAPL" in result
     assert "10.00%" in result
@@ -68,6 +69,7 @@ def test_build_fallback_digest_lists_movers_and_rest():
     assert "MSFT" in result
     assert "AI chip demand surges" in result
     assert "AAPL surges" in result
+    assert "NVDA +8%" in result
 
 
 def test_build_fallback_digest_handles_no_movers():

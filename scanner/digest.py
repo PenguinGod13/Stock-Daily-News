@@ -5,34 +5,42 @@ import requests
 OLLAMA_CHAT_URL = "https://ollama.com/api/chat"
 
 DIGEST_SYSTEM_PROMPT = """You are a financial digest writer. You will receive JSON \
-describing a user's stock watchlist (with price moves, ownership, and recent \
-headlines) and broader market/sector trends.
+describing a user's stock watchlist, broader market/sector trends, and data on \
+the biggest market movers today (stocks outside the user's watchlist).
 
 IMPORTANT: A numeric summary table (ticker, price, % change, P&L) is already \
-shown separately in the email. Do NOT reproduce price data, percentages, or \
-ticker symbols as a list or table in your response — that would be redundant. \
-Your job is to provide narrative context, explanation, and insight only.
+shown separately in the email for the user's own watchlist. Do NOT reproduce \
+price data or percentages for those tickers — that would be redundant. Your job \
+is narrative context, explanation, and insight only.
 
-Write a concise morning digest in Markdown with exactly these four sections, \
+Write a concise morning digest in Markdown with exactly these five sections, \
 in this order:
 
 1. TL;DR - 2-3 sentences on the overall morning picture.
 2. Your movers - for tickers where is_mover is true: a short sentence or two \
 explaining WHY they moved, based on their headlines. Include unrealised P&L \
 context for owned tickers. If no tickers are movers, say so briefly.
-3. Rest of your watchlist - for non-mover tickers: one sentence of news \
-context or notable observation per ticker (NOT price data — the table covers \
-that). If there is no interesting context, skip this section entirely rather \
-than writing filler.
-4. Market pulse & hot sectors - themes and sectors from the market trends data, \
-including ones outside the user's watchlist.
+3. Rest of your watchlist - for non-mover tickers: one sentence of news context \
+per ticker (NOT price data). Skip entirely if there is nothing interesting to say.
+4. Big movers today - 3-5 notable stocks from the market_movers data that moved \
+significantly today but are NOT on the user's watchlist. For each, include the \
+ticker symbol, approximate % change, and one sentence on why. Base this strictly \
+on the market_movers data provided — do not invent tickers or movements.
+5. Market pulse & hot sectors - themes and sectors from the market_trends data. \
+For each sector mentioned, include 1-2 example stock tickers that exemplify the \
+move (with approximate % change if available in the data). Include sectors outside \
+the user's watchlist.
 
-Be factual and concise. Do not invent headlines or events not present in the \
-input. Do not use markdown tables."""
+Be factual and concise. Do not invent data not present in the input. \
+Do not use markdown tables."""
 
 
-def build_prompt(ticker_records, market_trends):
-    return json.dumps({"tickers": ticker_records, "market_trends": market_trends})
+def build_prompt(ticker_records, market_trends, market_movers=None):
+    return json.dumps({
+        "tickers": ticker_records,
+        "market_trends": market_trends,
+        "market_movers": market_movers or [],
+    })
 
 
 def call_ollama_chat(ollama_api_key, prompt, model="gpt-oss:120b"):
@@ -54,7 +62,7 @@ def call_ollama_chat(ollama_api_key, prompt, model="gpt-oss:120b"):
     return data["message"]["content"]
 
 
-def build_fallback_digest(ticker_records, market_trends):
+def build_fallback_digest(ticker_records, market_trends, market_movers=None):
     lines = ["# Morning Digest (fallback — AI summary unavailable)", ""]
 
     movers = [r for r in ticker_records if r["is_mover"]]
@@ -73,13 +81,19 @@ def build_fallback_digest(ticker_records, market_trends):
         lines.append("- No tickers moved beyond the threshold today.")
     lines.append("")
 
-    lines.append("## Rest of your watchlist")
     rest = [r for r in ticker_records if not r["is_mover"]]
     if rest:
+        lines.append("## Rest of your watchlist")
         for r in rest:
             lines.append(f"- {r['ticker']}: {r['pct_change']:.2f}%")
+        lines.append("")
+
+    lines.append("## Big movers today")
+    if market_movers:
+        for t in market_movers[:5]:
+            lines.append(f"- {t['title']}")
     else:
-        lines.append("- (none)")
+        lines.append("- No market mover data available.")
     lines.append("")
 
     lines.append("## Market pulse & hot sectors")
@@ -92,12 +106,11 @@ def build_fallback_digest(ticker_records, market_trends):
     return "\n".join(lines)
 
 
-def build_digest(ollama_api_key, ticker_records, market_trends, model="gpt-oss:120b"):
-    prompt = build_prompt(ticker_records, market_trends)
-    last_error = None
+def build_digest(ollama_api_key, ticker_records, market_trends, market_movers=None, model="gpt-oss:120b"):
+    prompt = build_prompt(ticker_records, market_trends, market_movers)
     for _ in range(2):
         try:
             return call_ollama_chat(ollama_api_key, prompt, model=model)
-        except Exception as e:
-            last_error = e
-    return build_fallback_digest(ticker_records, market_trends)
+        except Exception:
+            pass
+    return build_fallback_digest(ticker_records, market_trends, market_movers)

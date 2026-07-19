@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from scanner.trends import get_market_trends
+from scanner.trends import get_market_trends, get_market_movers
 
 
 @patch("scanner.trends.requests.post")
@@ -44,12 +44,45 @@ def test_get_market_trends_falls_back_to_finnhub_on_error(mock_post, mock_get_ge
     mock_get_general_news.assert_called_once_with("finnhub-key")
 
 
+@patch("scanner.trends.requests.post")
+def test_get_market_movers_uses_web_search_results(mock_post):
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {
+        "results": [
+            {"title": "NVDA surges 8% on earnings beat", "url": "https://example.com/n", "content": "..."},
+        ]
+    }
+    mock_post.return_value = mock_response
+
+    result = get_market_movers("ollama-key", "finnhub-key")
+
+    assert len(result) == 1
+    assert result[0]["title"] == "NVDA surges 8% on earnings beat"
+    called_args, called_kwargs = mock_post.call_args
+    assert called_args[0] == "https://ollama.com/api/web_search"
+    assert "gainers" in called_kwargs["json"]["query"].lower()
+
+
 @patch("scanner.trends.get_general_news")
 @patch("scanner.trends.requests.post")
-def test_get_market_trends_returns_empty_list_when_both_sources_fail(mock_post, mock_get_general_news):
+def test_get_market_movers_falls_back_to_finnhub_on_error(mock_post, mock_get_general_news):
+    mock_post.side_effect = Exception("network error")
+    mock_get_general_news.return_value = [
+        {"headline": "Markets move", "url": "https://example.com/m"},
+    ]
+
+    result = get_market_movers("ollama-key", "finnhub-key")
+
+    assert result == [{"title": "Markets move", "url": "https://example.com/m", "content": ""}]
+
+
+@patch("scanner.trends.get_general_news")
+@patch("scanner.trends.requests.post")
+def test_get_market_movers_returns_empty_list_when_both_fail(mock_post, mock_get_general_news):
     mock_post.side_effect = Exception("network error")
     mock_get_general_news.side_effect = Exception("finnhub down")
 
-    result = get_market_trends("ollama-key", "finnhub-key")
+    result = get_market_movers("ollama-key", "finnhub-key")
 
     assert result == []

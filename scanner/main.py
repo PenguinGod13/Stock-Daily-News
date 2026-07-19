@@ -7,7 +7,7 @@ from scanner.nz_time import is_run_window
 from scanner.watchlist import get_watchlist
 from scanner.market_data import get_quote, get_company_news
 from scanner.records import build_ticker_record
-from scanner.trends import get_market_trends
+from scanner.trends import get_market_trends, get_market_movers
 from scanner.digest import build_digest
 from scanner.emailer import render_digest_email, send_email, send_debug_email
 
@@ -52,8 +52,9 @@ def run(config=None, force=False):
             errors.append(f"Failed to fetch data for {ticker}: {e}")
 
     market_trends = get_market_trends(config["ollama_api_key"], config["finnhub_api_key"])
+    market_movers = get_market_movers(config["ollama_api_key"], config["finnhub_api_key"])
 
-    digest_md = build_digest(config["ollama_api_key"], ticker_records, market_trends)
+    digest_md = build_digest(config["ollama_api_key"], ticker_records, market_trends, market_movers)
     subject_date = datetime.now(ZoneInfo('Pacific/Auckland')).date().strftime('%a %b %d')
     subject = f"Morning Digest — {subject_date}"
     html_body = render_digest_email(digest_md, ticker_records, subject_date)

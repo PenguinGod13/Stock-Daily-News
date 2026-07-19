@@ -22,14 +22,15 @@ explaining WHY they moved, based on their headlines. Include unrealised P&L \
 context for owned tickers. If no tickers are movers, say so briefly.
 3. Rest of your watchlist - for non-mover tickers: one sentence of news context \
 per ticker (NOT price data). Skip entirely if there is nothing interesting to say.
-4. Big movers today - 3-5 notable stocks from the market_movers data that moved \
-significantly today but are NOT on the user's watchlist. For each, include the \
-ticker symbol, approximate % change, and one sentence on why. Base this strictly \
-on the market_movers data provided — do not invent tickers or movements.
+4. Big movers today - a markdown table of 3-5 notable stocks from the \
+market_movers data that moved significantly today but are NOT on the user's \
+watchlist. Use exactly these columns: Ticker | Change | Why it moved. \
+Keep the "Why" column to one short sentence. Base this strictly on the \
+market_movers data provided — do not invent tickers or movements.
 5. Market pulse & hot sectors - themes and sectors from the market_trends data. \
-For each sector mentioned, include 1-2 example stock tickers that exemplify the \
-move (with approximate % change if available in the data). Include sectors outside \
-the user's watchlist.
+For each sector, write one sentence and include 1-2 example stock tickers \
+with approximate % changes (from the market_trends data if available). \
+Include sectors outside the user's watchlist.
 
 Be factual and concise. Do not invent data not present in the input. \
 Do not use markdown tables."""

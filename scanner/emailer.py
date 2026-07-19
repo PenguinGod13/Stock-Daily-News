@@ -13,12 +13,13 @@ _ALLOWED_TAGS = {
     "h1", "h2", "h3", "h4",
     "ul", "ol", "li",
     "a", "blockquote", "code", "pre",
+    "table", "thead", "tbody", "tr", "th", "td",
 }
 _ALLOWED_ATTRS = {"a": {"href", "title"}}
 
 
 def markdown_to_html(md_text):
-    raw_html = markdown.markdown(md_text)
+    raw_html = markdown.markdown(md_text, extensions=["tables"])
     return nh3.clean(raw_html, tags=_ALLOWED_TAGS, attributes=_ALLOWED_ATTRS)
 
 
@@ -97,6 +98,30 @@ def render_digest_email(markdown_text, ticker_records, subject_date):
   h2 {{ font-size: 16px; margin: 20px 0 8px 0; }}
   p, li {{ line-height: 1.55; font-size: 14px; }}
   table {{ width: 100%; }}
+  /* AI-generated narrative tables (movers, sectors) */
+  .narrative table {{
+    border-collapse: collapse;
+    margin: 4px 0 16px 0;
+    font-size: 13px;
+  }}
+  .narrative th {{
+    text-align: left;
+    padding: 6px 10px;
+    background: #f3f4f6;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+  }}
+  .narrative td {{
+    padding: 8px 10px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: top;
+    font-size: 13px;
+    line-height: 1.45;
+  }}
+  .narrative tr:last-child td {{ border-bottom: none; }}
   @media (max-width: 480px) {{
     .container {{ padding: 12px 8px; }}
     .card {{ padding: 16px; border-radius: 8px; }}
@@ -113,7 +138,7 @@ def render_digest_email(markdown_text, ticker_records, subject_date):
       <h1>Morning Digest</h1>
       <p class="subtitle">{html.escape(subject_date)}</p>
       {table_html}
-      {narrative_html}
+      <div class="narrative">{narrative_html}</div>
     </div>
   </div>
 </body>

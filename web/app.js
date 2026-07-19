@@ -138,12 +138,15 @@ document.getElementById("add-btn").addEventListener("click", addRow);
 document.getElementById("disconnect-btn").addEventListener("click", disconnect);
 
 (async function autoConnect() {
-  // A one-time setup link (?url=...&anonKey=...&secret=...) takes priority
+  // A one-time setup link (#url=...&anonKey=...&secret=...) takes priority
   // over anything already saved, so sharing a fresh link always works even
-  // if this browser previously connected to something else. The params are
-  // stripped from the address bar immediately after reading them so the
-  // secret doesn't linger in browser history.
-  const params = new URLSearchParams(window.location.search);
+  // if this browser previously connected to something else. This uses the
+  // URL fragment (#), not the query string (?): fragments are never sent
+  // to any server, are excluded from Referer headers, and never appear in
+  // server/CDN access logs — unlike query params, which are. The fragment
+  // is also stripped from the address bar immediately after reading it so
+  // it doesn't linger in browser history either.
+  const params = new URLSearchParams(window.location.hash.slice(1));
   const linkUrl = params.get("url");
   const linkAnonKey = params.get("anonKey");
   const linkSecret = params.get("secret");

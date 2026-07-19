@@ -43,8 +43,9 @@ design.
      time).
    - Open the published page, enter the Supabase URL, anon key, and the
      shared secret from step 1 to connect (or use a one-time setup link:
-     `<page-url>/?url=<supabase-url>&anonKey=<anon-key>&secret=<shared-secret>`,
-     which saves the values to that browser automatically).
+     `<page-url>/#url=<supabase-url>&anonKey=<anon-key>&secret=<shared-secret>`
+     — note the `#`, not `?`, so the values never leave the browser — which
+     saves them to that browser automatically on first visit).
 
 ## Local development
 
